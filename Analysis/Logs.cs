@@ -4,6 +4,7 @@ namespace Analysis
 {
     public class Logs
     {
+		public static readonly string Break = System.Environment.NewLine + "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&";
         public static readonly Logger Console = LogManager.GetLogger("Console");
         public static readonly Logger ErrorLog = LogManager.GetLogger("ErrorLog");
 

@@ -131,10 +131,10 @@
   <ItemGroup>
     <Compile Include="AnalysisResult.cs" />
     <Compile Include="AnalysisType.cs" />
-    <Compile Include="AsyncAwaitAntiPatternsWalker.cs" />
-    <Compile Include="AsyncAwaitAntiPatternsResult.cs" />
-    <Compile Include="ConcurrencyUsageResult.cs" />
-    <Compile Include="ConcurrencyUsageWalker.cs" />
+    <Compile Include="AsyncAwaitAntiPatterns\AsyncAwaitAntiPatternsWalker.cs" />
+    <Compile Include="AsyncAwaitAntiPatterns\AsyncAwaitAntiPatternsResult.cs" />
+    <Compile Include="ConcurrencyUsage\ConcurrencyUsageResult.cs" />
+    <Compile Include="ConcurrencyUsage\ConcurrencyUsageWalker.cs" />
     <Compile Include="AnalysisWalker.cs" />
     <Compile Include="Logs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

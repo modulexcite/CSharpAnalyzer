@@ -12,6 +12,7 @@ using RoslynUtilities;
 
 namespace AnalysisRunner
 {
+
 	public class CodeAnalysisResults : DbContext
 	{
 		public DbSet<App> AppResults { get; set; }
@@ -22,7 +23,7 @@ namespace AnalysisRunner
         private static string CodeCorpusPath = ConfigurationManager.AppSettings["CodeCorpus"];
         private static string SubsetApps = ConfigurationManager.AppSettings["SubsetApps"];
 
-        public static AnalysisType[] AnalysisTypes = { AnalysisType.ConcurrencyUsage };
+        public static AnalysisType[] AnalysisTypes = { AnalysisType.AsyncAwaitAntiPatterns };
         private static void Main(string[] args)
         {
             StartAnalysis();
