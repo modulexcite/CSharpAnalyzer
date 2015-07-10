@@ -20,7 +20,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Analysis", "Analysis\Analys
 		{B22FB367-898D-496F-B6BD-B79EE49B35BA} = {B22FB367-898D-496F-B6BD-B79EE49B35BA}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoslynUtilities", "..\RoslynUtilities\RoslynUtilities\RoslynUtilities.csproj", "{B22FB367-898D-496F-B6BD-B79EE49B35BA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoslynUtilities", "RoslynUtilities\RoslynUtilities.csproj", "{B22FB367-898D-496F-B6BD-B79EE49B35BA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WillDeletedAnalysis", "OldAnalysis\WillDeletedAnalysis.csproj", "{EBB275F0-FDB3-4149-AE72-D27FDAE53A6F}"
 EndProject
