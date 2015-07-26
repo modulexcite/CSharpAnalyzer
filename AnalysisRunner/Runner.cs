@@ -24,6 +24,7 @@ namespace AnalysisRunner
         private static string SubsetApps = ConfigurationManager.AppSettings["SubsetApps"];
 
         public static AnalysisType[] AnalysisTypes = { AnalysisType.AsyncAwaitAntiPatterns };
+
         private static void Main(string[] args)
         {
             StartAnalysis();
@@ -35,9 +36,13 @@ namespace AnalysisRunner
         {
             IEnumerable<string> appsToAnalyze;
             if (bool.Parse(ConfigurationManager.AppSettings["OnlyAnalyzeSubsetApps"]))
+            {
                 appsToAnalyze = File.ReadAllLines(SubsetApps).Select(appName => CodeCorpusPath + appName);
+            }
             else
+            {
                 appsToAnalyze = Directory.GetDirectories(CodeCorpusPath);
+            }
 
             //appsToAnalyze = appsToAnalyze.Take(2);
 

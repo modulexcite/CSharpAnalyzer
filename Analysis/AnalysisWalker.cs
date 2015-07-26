@@ -30,7 +30,9 @@ namespace Analysis
                 // IGNORE WCF SERVICES WHICH ARE GENERATED AUTOMATICALLY
             }
             else
+            {
                 base.VisitClassDeclaration(node);
+            }
         }
     }
 

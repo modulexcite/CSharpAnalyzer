@@ -35,9 +35,12 @@ namespace Analysis
 
 		public int ParallelForEach { get; set; }
 
+        public Dictionary<string, int> LibraryUsage { get; }
+
 		public ConcurrencyUsageResult()
 		{
 			Type = AnalysisType.ConcurrencyUsage;
+            LibraryUsage = new Dictionary<string, int>();
 		}
 	}
 }

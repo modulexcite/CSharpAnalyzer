@@ -56,6 +56,9 @@ namespace Analysis
 			return instance;
 		}
 
+        /// <summary>
+        /// Getting the list of all properties of the given AnalysisResult.
+        /// </summary>
 		public static List<PropertyInfo> FilterProperties(Type type)
 		{
 			return type.GetProperties().Where(a => a.Name != "AnalysisId" && a.Name != "Type").ToList();
