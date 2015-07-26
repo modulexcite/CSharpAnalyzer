@@ -13,8 +13,8 @@ namespace ExtractData
 	class Program
 	{
 		static CodeAnalysisResults context = new CodeAnalysisResults();
-		static string basicSummaryFile = @"C:\Users\semih\Desktop\basicSummary.csv";
-		static string concurrencyResultFile = @"C:\Users\semih\Desktop\concurrencyResultFile.csv";
+		static string basicSummaryFile = @"C:\Users\t-seok\Desktop\basicSummary.csv";
+		static string concurrencyResultFile = @"C:\Users\t-seok\Desktop\concurrencyResultFile.csv";
 
 
 		static void Main(string[] args)

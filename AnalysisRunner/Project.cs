@@ -1,15 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.IO;
-using System;
 using Analysis;
-using Microsoft.Build.Exceptions;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.MSBuild;
 using RoslynUtilities;
-using System.Diagnostics;
 
 namespace AnalysisRunner
 {
