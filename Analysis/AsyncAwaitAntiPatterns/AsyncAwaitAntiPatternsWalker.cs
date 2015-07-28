@@ -13,7 +13,9 @@ namespace Analysis
 	{
 		public AsyncAwaitAntiPatternsResult Result { get; set; }
 
-		public AsyncAwaitAntiPatternsWalker(Document sourceFile, SemanticModel semanticModel, AsyncAwaitAntiPatternsResult result)
+        private static string[] BlockingMethodCalls = { "WaitAll", "WaitAny", "Wait", "Sleep" };
+
+        public AsyncAwaitAntiPatternsWalker(Document sourceFile, SemanticModel semanticModel, AsyncAwaitAntiPatternsResult result)
 			: base(sourceFile, semanticModel)
         {
 			Result = result;
@@ -23,8 +25,22 @@ namespace Analysis
         {
 			if (node.IsAsync())
 			{
-				DetectBlockingAsyncCallers(node);
-			}
+                Logs.AsyncMethods.Info(SourceFile.FilePath + "\n" + node + "\n" + "******************\n");
+
+                DetectBlockingAsyncCallers(node);
+
+                if (IsUnnecessaryAsyncAwait(node))
+                {
+                    Logs.TempLog.Info("Unnecessary async/await" + "\n" + SourceFile.FilePath + "\n" + node + "\n" + "******************\n");
+                }
+
+                string replacement;
+                if (IsThereLongRunning(node, out replacement))
+                {
+                    Logs.TempLog2.Info("Longrunning replacement: " + replacement + "\n" + SourceFile.FilePath + "\n" + node + "\n" + "******************\n");
+                }
+            }
+
 			base.VisitMethodDeclaration(node);
 		}
 
@@ -42,67 +58,22 @@ namespace Analysis
 						var callerText = loc.Document.GetTextAsync().Result.Lines.ElementAt(loc.Location.GetLineSpan().StartLinePosition.Line).ToString();
 						if (callerText.Contains(".Wait()")) // caller.Contains(".Result")
 						{
-							Logs.TempLog2.Info("Blocking Caller Name: " + callerText.Trim() + " from this file: " + loc.Document.FilePath);
+							Logs.TempLog5.Info("Blocking Caller Name: " + callerText.Trim() + " from this file: " + loc.Document.FilePath);
 							var temp = callerNode != null ? callerNode.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault() : null;
 							if (temp != null)
 							{
-								Logs.TempLog2.Info("Blocking Caller Method Node: " + temp.ToLog());
+								Logs.TempLog5.Info("Blocking Caller Method Node: " + temp.ToLog());
 								if (temp.IsAsync())
 								{
-									Logs.TempLog2.Info("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+									Logs.TempLog5.Info("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
 								}
 							}
-							Logs.TempLog2.Info("Async method Callee from this file " + SourceFile.FilePath + node.ToLog()+ Logs.Break);
+
+							Logs.TempLog5.Info("Async method Callee from this file " + SourceFile.FilePath + node.ToLog()+ Logs.Break);
 						}
 					}
 				}
 			}
-		}
-
-		private void DetectBlockingOperations(InvocationExpressionSyntax methodCall, IMethodSymbol methodCallSymbol)
-		{
-
-			var methodDeclaration = methodCall.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-			var replacement = DetectSynchronousUsages((IMethodSymbol)methodCallSymbol.OriginalDefinition, SemanticModel);
-
-			if (methodDeclaration != null)
-			{
-				if (replacement != "None")
-				{
-					Logs.TempLog6.Info(@"{0}{1}{2}{3}**********************************************",
-										SourceFile.FilePath,
-										System.Environment.NewLine + System.Environment.NewLine + "BLOCKING METHODCALL: " + methodCallSymbol.ToString(),
-										System.Environment.NewLine + System.Environment.NewLine + "REPLACE IT WITH: " + replacement,
-										methodDeclaration.ToLog());
-				}
-			}
-		}
-
-		public static string DetectSynchronousUsages(IMethodSymbol methodCallSymbol, SemanticModel semanticModel)
-		{
-			var list = semanticModel.LookupSymbols(0, container: methodCallSymbol.ContainingType,
-								includeReducedExtensionMethods: true);
-
-			var name = methodCallSymbol.Name;
-
-			if (name.Equals("Sleep"))
-			{
-				return "Task.Delay";
-			}
-
-			foreach (var tmp in list)
-			{
-				//if (tmp.Name.Equals("Begin" + name))
-				//{
-				//    return tmp.Name;
-				//}
-				if (tmp.Name.Equals(name + "Async"))
-				{
-					if (!name.Equals("Invoke"))
-						return tmp.Name;
-				}
-			}
-			return "None";
 		}
 
 		private static bool IsFireForget(MethodDeclarationSyntax node)
@@ -126,27 +97,32 @@ namespace Analysis
 			return false;
 		}
 
-		private static string[] BlockingMethodCalls = { "WaitAll", "WaitAny", "Wait", "Sleep" };
-		private bool IsThereLongRunning(MethodDeclarationSyntax node)
+		private bool IsThereLongRunning(MethodDeclarationSyntax node, out string replacement)
 		{
-			foreach (var blocking in node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Where(a => BlockingMethodCalls.Any(b => b.Equals(a.Name.ToString()))))
-				return true;
+            replacement = string.Empty;
+            foreach (var blocking in node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Where(a => BlockingMethodCalls.Any(b => b.Equals(a.Name.ToString()))))
+            {
+                replacement = "Blocking Method Calls";
+                return true;
+            }
 
 			foreach (var methodCall in node.DescendantNodes().OfType<InvocationExpressionSyntax>())
 			{
 				var methodCallSymbol = (IMethodSymbol)SemanticModel.GetSymbolInfo(methodCall).Symbol;
-
 				if (methodCallSymbol != null)
 				{
-					var replacement = DetectSynchronousUsages((IMethodSymbol)methodCallSymbol.OriginalDefinition, SemanticModel);
+					replacement = DetectSynchronousUsages((IMethodSymbol)methodCallSymbol.OriginalDefinition, SemanticModel);
 
-					if (replacement != "None")
+					if (!string.IsNullOrEmpty(replacement))
 					{
-						if (!methodCallSymbol.Name.ToString().Equals("Invoke"))
-							return true;
+                        if (!methodCallSymbol.Name.ToString().Equals("Invoke"))
+                        {
+                            return true;
+                        }
 					}
 				}
 			}
+
 			return false;
 		}
 
@@ -188,7 +164,33 @@ namespace Analysis
 			}
 		}
 
-		private bool CheckUIElementAccess(MethodDeclarationSyntax node)
+        #region Utilities
+
+        public static string DetectSynchronousUsages(IMethodSymbol methodCallSymbol, SemanticModel semanticModel)
+        {
+            var list = semanticModel.LookupSymbols(0, container: methodCallSymbol.ContainingType,
+                                includeReducedExtensionMethods: true);
+
+            var name = methodCallSymbol.Name;
+
+            if (name.Equals("Sleep"))
+            {
+                return "Task.Delay";
+            }
+
+            foreach (var tmp in list)
+            {
+                if (tmp.Name.Equals(name + "Async"))
+                {
+                    if (!name.Equals("Invoke"))
+                        return tmp.Name;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private bool CheckUIElementAccess(MethodDeclarationSyntax node)
 		{
 			foreach (var identifier in node.Body.DescendantNodes().OfType<IdentifierNameSyntax>())
 			{
@@ -205,71 +207,72 @@ namespace Analysis
 			return false;
 		}
 
+        #endregion Utilities
 
-		//private void ProcessMethodCallsInMethod(MethodDeclarationSyntax node, int n, string topAncestor)
-		//{
-		//	var hashcode = node.Identifier.ToString() + node.ParameterList.ToString();
+        //private void ProcessMethodCallsInMethod(MethodDeclarationSyntax node, int n, string topAncestor)
+        //{
+        //	var hashcode = node.Identifier.ToString() + node.ParameterList.ToString();
 
-		//	bool asyncFlag = false;
-		//	if (node.HasAsyncModifier())
-		//		asyncFlag = true;
+        //	bool asyncFlag = false;
+        //	if (node.HasAsyncModifier())
+        //		asyncFlag = true;
 
-		//	if (!AnalyzedMethods.Contains(hashcode))
-		//	{
-		//		AnalyzedMethods.Add(hashcode);
+        //	if (!AnalyzedMethods.Contains(hashcode))
+        //	{
+        //		AnalyzedMethods.Add(hashcode);
 
-		//		var newMethods = new List<MethodDeclarationSyntax>();
-		//		try
-		//		{
-		//			var semanticModel = Document.Project.Solution.GetDocument(node.SyntaxTree).GetSemanticModelAsync().Result;
+        //		var newMethods = new List<MethodDeclarationSyntax>();
+        //		try
+        //		{
+        //			var semanticModel = Document.Project.Solution.GetDocument(node.SyntaxTree).GetSemanticModelAsync().Result;
 
-		//			foreach (var blocking in node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Where(a => BlockingMethodCalls.Any(b => b.Equals(a.Name.ToString()))))
-		//			{
-		//				Logs.TempLog2.Info("BLOCKING {0} {1} {2}\r\n{3} \r\n{4}\r\n{5}\r\n--------------------------", asyncFlag, n, blocking, Document.FilePath, topAncestor, node);
-		//			}
+        //			foreach (var blocking in node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Where(a => BlockingMethodCalls.Any(b => b.Equals(a.Name.ToString()))))
+        //			{
+        //				Logs.TempLog2.Info("BLOCKING {0} {1} {2}\r\n{3} \r\n{4}\r\n{5}\r\n--------------------------", asyncFlag, n, blocking, Document.FilePath, topAncestor, node);
+        //			}
 
-		//			foreach (var blocking in node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Where(a => a.Name.ToString().Equals("Result")))
-		//			{
-		//				var s = semanticModel.GetSymbolInfo(blocking).Symbol;
-		//				if (s != null && s.ToString().Contains("System.Threading.Tasks"))
-		//					Logs.TempLog2.Info("BLOCKING {0} {1} {2}\r\n{3} \r\n{4}\r\n{5}\r\n--------------------------", asyncFlag, n, blocking, Document.FilePath, topAncestor, node);
-		//			}
+        //			foreach (var blocking in node.DescendantNodes().OfType<MemberAccessExpressionSyntax>().Where(a => a.Name.ToString().Equals("Result")))
+        //			{
+        //				var s = semanticModel.GetSymbolInfo(blocking).Symbol;
+        //				if (s != null && s.ToString().Contains("System.Threading.Tasks"))
+        //					Logs.TempLog2.Info("BLOCKING {0} {1} {2}\r\n{3} \r\n{4}\r\n{5}\r\n--------------------------", asyncFlag, n, blocking, Document.FilePath, topAncestor, node);
+        //			}
 
-		//			foreach (var methodCall in node.DescendantNodes().OfType<InvocationExpressionSyntax>())
-		//			{
-		//				var methodCallSymbol = (IMethodSymbol)semanticModel.GetSymbolInfo(methodCall).Symbol;
+        //			foreach (var methodCall in node.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        //			{
+        //				var methodCallSymbol = (IMethodSymbol)semanticModel.GetSymbolInfo(methodCall).Symbol;
 
-		//				if (methodCallSymbol != null)
-		//				{
-		//					var replacement = ((IMethodSymbol)methodCallSymbol.OriginalDefinition).DetectSynchronousUsages(SemanticModel);
+        //				if (methodCallSymbol != null)
+        //				{
+        //					var replacement = ((IMethodSymbol)methodCallSymbol.OriginalDefinition).DetectSynchronousUsages(SemanticModel);
 
-		//					if (replacement != "None")
-		//					{
-		//						if (!methodCallSymbol.Name.ToString().Equals("Invoke"))
-		//							Logs.TempLog2.Info("LONGRUNNING {0} {1} {2} {3}\r\n{4} {5}\r\n{6}\r\n--------------------------", asyncFlag, n, methodCallSymbol, Document.FilePath, replacement, topAncestor, node);
-		//						Logs.TempLog3.Info("{0} {1}", methodCallSymbol.ContainingType, methodCallSymbol, replacement);
-		//					}
+        //					if (replacement != "None")
+        //					{
+        //						if (!methodCallSymbol.Name.ToString().Equals("Invoke"))
+        //							Logs.TempLog2.Info("LONGRUNNING {0} {1} {2} {3}\r\n{4} {5}\r\n{6}\r\n--------------------------", asyncFlag, n, methodCallSymbol, Document.FilePath, replacement, topAncestor, node);
+        //						Logs.TempLog3.Info("{0} {1}", methodCallSymbol.ContainingType, methodCallSymbol, replacement);
+        //					}
 
-		//					var methodDeclarationNode = methodCallSymbol.FindMethodDeclarationNode();
-		//					if (methodDeclarationNode != null)
-		//						newMethods.Add(methodDeclarationNode);
-		//				}
-		//			}
+        //					var methodDeclarationNode = methodCallSymbol.FindMethodDeclarationNode();
+        //					if (methodDeclarationNode != null)
+        //						newMethods.Add(methodDeclarationNode);
+        //				}
+        //			}
 
-		//			foreach (var newMethod in newMethods)
-		//				ProcessMethodCallsInMethod(newMethod, n + 1, topAncestor);
-		//		}
-		//		catch (Exception ex)
-		//		{
-		//			Logs.Console.Warn("Caught exception while processing method call node: {0} @ {1}", node, ex.Message);
+        //			foreach (var newMethod in newMethods)
+        //				ProcessMethodCallsInMethod(newMethod, n + 1, topAncestor);
+        //		}
+        //		catch (Exception ex)
+        //		{
+        //			Logs.Console.Warn("Caught exception while processing method call node: {0} @ {1}", node, ex.Message);
 
-		//			if (!(
-		//				  ex is FormatException ||
-		//				  ex is ArgumentException ||
-		//				  ex is PathTooLongException))
-		//				throw;
-		//		}
-		//	}
-		//}
-	}
+        //			if (!(
+        //				  ex is FormatException ||
+        //				  ex is ArgumentException ||
+        //				  ex is PathTooLongException))
+        //				throw;
+        //		}
+        //	}
+        //}
+    }
 }

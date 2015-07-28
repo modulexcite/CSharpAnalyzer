@@ -19,8 +19,6 @@ namespace Analysis
             if (node.IsAsync())
             {
                 Result.Async++;
-				Logs.AsyncMisuse.Info($"{SourceFile.FilePath}{node.ToLog()}");
-
 				if (node.ReturnsVoid())
 				{
 					Result.AsyncReturnVoid++;
@@ -47,7 +45,7 @@ namespace Analysis
                 }
                 else if (symbol.IsTAPMethod())
                 {
-                    Logs.TempLog.Info(SourceFile.FilePath + "\n" + node + "\n" + symbol + "******************\n");
+                    // printing TAP methods: Logs.TempLog.Info(SourceFile.FilePath + "\n" + node + "\n" + symbol + "******************\n");
                     Result.TAP++;
                 }
                 else if (symbol.IsThreadStart())

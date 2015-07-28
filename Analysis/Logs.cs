@@ -10,7 +10,7 @@ namespace Analysis
 
         public static readonly Logger SolutionFiles = LogManager.GetLogger("SolutionFiles");
 
-        public static readonly Logger AsyncMisuse = LogManager.GetLogger("AsyncMisuse");
+        public static readonly Logger AsyncMethods = LogManager.GetLogger("AsyncMethods");
 
 
         public static readonly Logger SummaryJSONLog = LogManager.GetLogger("SummaryJSONLog");
