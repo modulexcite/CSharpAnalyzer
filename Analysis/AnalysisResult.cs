@@ -24,8 +24,11 @@ namespace Analysis
 			string result = "";
 			foreach (var property in FilterProperties(type))
 			{
-				result += property.GetValue(this, null) + ", ";
-			}
+                if (property.PropertyType == typeof(int))
+                {
+                    result += property.GetValue(this, null) + ", ";
+                }
+            }
 
 			return result;
 		}
@@ -37,8 +40,11 @@ namespace Analysis
 			string result = "";
 			foreach (var property in FilterProperties(type))
 			{
-				result += property.Name + ", ";
-			}
+                if (property.PropertyType == typeof(int))
+                {
+                    result += property.Name + ", ";
+                }
+            }
 
 			return result;
 		}
@@ -50,8 +56,11 @@ namespace Analysis
 
 			foreach (var property in FilterProperties(type))
 			{
-				int value = (int)property.GetValue(c1, null) + (int)property.GetValue(c2, null);
-				property.SetValue(instance, value);
+                if (property.PropertyType == typeof(int))
+                {
+                    int value = (int)property.GetValue(c1, null) + (int)property.GetValue(c2, null);
+                    property.SetValue(instance, value);
+                }
 			}
 			return instance;
 		}

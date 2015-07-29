@@ -83,6 +83,11 @@ namespace Analysis
 
 		private static bool IsUnnecessaryAsyncAwait(MethodDeclarationSyntax node)
 		{
+            if(node.AttributeLists.Any(a => a.ToFullString().Contains("TestMethod")))
+            {
+                return false;
+            }
+
 			int numAwaits = Regex.Matches(node.Body.ToString(), "await").Count;
 			int numReturnAwaits = Regex.Matches(node.Body.ToString(), "return await").Count;
 

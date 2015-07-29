@@ -22,7 +22,7 @@ namespace AnalysisRunner
         private static string CodeCorpusPath = ConfigurationManager.AppSettings["CodeCorpus"];
         private static string SubsetApps = ConfigurationManager.AppSettings["SubsetApps"];
 
-        public static AnalysisType[] AnalysisTypes = { AnalysisType.AsyncAwaitAntiPatterns };
+        public static AnalysisType[] AnalysisTypes = { AnalysisType.ConcurrencyUsage };
 
         private static void Main(string[] args)
         {
@@ -62,6 +62,7 @@ namespace AnalysisRunner
                             Projects = new List<Project>(),
                             CompletedAnalyses = AnalysisType.None
                         };
+
                         context.AppResults.Add(app);
                     }
 
