@@ -174,8 +174,11 @@ namespace AnalysisRunner
             var semanticModel = (SemanticModel)sourceFile.GetSemanticModelAsync().Result;
             var sloc = sourceFile.GetTextAsync().Result.Lines.Count;
 
-            //try
-            //{
+            if (IsIgnoredSourceFile(sourceFile))
+            {
+                return;
+            }
+
             foreach (var analysisType in analyses)
             {
 
@@ -185,11 +188,17 @@ namespace AnalysisRunner
             }
 
             project.SLOC += sloc;
-            //}
-            //catch ( ex)
-            //{
-            //	Logs.ErrorLog.Info("SourceFile is not analyzed: {0}: Reason: {1}", sourceFile.FilePath, ex.Message);
-            //}
+        }
+
+        private static bool IsIgnoredSourceFile(Document sourceFile)
+        {
+            if (sourceFile.Name.Contains(".g.cs"))
+            {
+                // Ignore domino files which are generated automatically.
+                return true;
+            }
+
+            return false;
         }
 
     }
