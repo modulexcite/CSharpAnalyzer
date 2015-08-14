@@ -37,6 +37,7 @@ namespace Analysis
 
                 if (symbol.IsAPMBeginMethod())
                 {
+                    Logs.TempLog.Info(SourceFile.FilePath + "\n" + node + "\n" + symbol + "\n"+ node.FirstAncestorOrSelf<MethodDeclarationSyntax>() + "******************\n");
                     Result.APM++;
                 }
                 else if (node.IsEAPMethod())
